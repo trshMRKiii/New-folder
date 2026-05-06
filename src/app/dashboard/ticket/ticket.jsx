@@ -1,5 +1,6 @@
 import React from "react";
 import { useTicket, statusColor, formatTime } from "../../../lib/useTicket";
+import { SHIFTS } from "../../../lib/constants";
 import "../../../styles/Ticket.css";
 
 function Ticket() {
@@ -25,6 +26,10 @@ function Ticket() {
     handleVehicleChange,
     handleDriverChange,
     handleIssueTicket,
+    lateDate,
+    setLateDate,
+    lateBatch,
+    setLateBatch,
   } = useTicket();
 
   return (
@@ -184,26 +189,91 @@ function Ticket() {
             <div className="ticket-card-body">
               <div className="ticket-field">
                 <label className="ticket-label">Issuance Date</label>
-                <input type="date" className="ticket-select" />
+                <input 
+                  type="date" 
+                  className="ticket-select" 
+                  value={lateDate}
+                  onChange={(e) => setLateDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                />
               </div>
 
               <div className="ticket-field">
                 <label className="ticket-label">Batch</label>
-                <select className="ticket-select">
-                  <option>Batch 1 (6am–3pm)</option>
-                  <option>Batch 2 (3pm–9pm)</option>
+                <select 
+                  className="ticket-select"
+                  value={lateBatch}
+                  onChange={(e) => setLateBatch(e.target.value)}
+                >
+                  <option value={SHIFTS.BATCH_1.name}>Batch 1 (6am–3pm)</option>
+                  <option value={SHIFTS.BATCH_2.name}>Batch 2 (3pm–9pm)</option>
                 </select>
               </div>
 
               <div className="ticket-field">
                 <label className="ticket-label">Vehicle (Plate Number)</label>
-                <select className="ticket-select">
-                  <option>— Select a vehicle —</option>
+                <select 
+                  className="ticket-select"
+                  value={selectedVehicle?.id || ""}
+                  onChange={handleVehicleChange}
+                >
+                  <option value="">— Select a vehicle —</option>
+                  {availableVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>{v.plate_number}</option>
+                  ))}
                 </select>
+                {selectedDriver ? (
+                  <div className="ticket-driver-info">
+                    <div className="ticket-driver-avatar">
+                      {selectedDriver.name.charAt(0)}
+                    </div>
+                    <div className="ticket-driver-meta">
+                      <span className="ticket-driver-name">{selectedDriver.name}</span>
+                      <span className="ticket-driver-id">ID: {selectedDriver.id}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="ticket-driver-empty">No driver assigned to this vehicle</p>
+                )}
+
+                {selectedDriver && (
+                  <div className="ticket-route-pill">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    {selectedVehicle.route_detail?.full_name || "N/A"}
+                  </div>
+                )}
+
+                {showDriverModal && (
+                  <div className="ticket-driver-modal">
+                    <label className="ticket-label">Select Active Driver</label>
+                    <select
+                      className="ticket-select"
+                      value={selectedDriver?.id || ""}
+                      onChange={(e) => handleDriverChange(parseInt(e.target.value))}
+                    >
+                      <option value="">— Choose a driver —</option>
+                      {activeDrivers.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
-              <button type="button" className="ticket-issue-btn">
-                Issue Late Ticket
+              <button 
+                type="button" 
+                className="ticket-issue-btn"
+                onClick={() => handleIssueTicket(true, lateDate, lateBatch)}
+                disabled={issuingTicket || !selectedVehicle || !selectedDriver || !lateDate}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+                  <path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>
+                </svg>
+                {issuingTicket ? "Issuing…" : "Issue Late Ticket"}
               </button>
             </div>
           </div>

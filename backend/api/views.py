@@ -309,3 +309,42 @@ def server_time(request):
     """Return current server time in ISO format"""
     now = timezone.now()
     return Response({'time': now.isoformat()})
+
+@api_view(['GET'])
+def late_issue_records(request):
+    """Fetch all vehicles and drivers for late issue tickets (bypass status filters)"""
+    try:
+        vehicles = Vehicle.objects.select_related('route', 'active_driver').filter(is_archived=False).order_by('code')
+        drivers = Driver.objects.filter(is_archived=False).order_by('code')
+
+        vehicle_data = [
+            {
+                'id': v.id,
+                'code': v.code,
+                'plate_number': v.plate_number,
+                'route': v.route.full_name if v.route else '—',
+                'driver': v.active_driver.name if v.active_driver else '—',
+                'status': v.get_status_display(),
+            }
+            for v in vehicles
+        ]
+
+        driver_data = [
+            {
+                'id': d.id,
+                'code': d.code,
+                'name': d.name,
+                'contact_number': getattr(d, 'contact', '—'),
+                'status': d.status,
+            }
+            for d in drivers
+        ]
+
+        return Response({
+            'vehicles': vehicle_data,
+            'drivers': driver_data,
+            'total_vehicles': len(vehicle_data),
+            'total_drivers': len(driver_data),
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

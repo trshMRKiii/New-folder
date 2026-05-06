@@ -36,6 +36,20 @@ export const hadBatch1TicketToday = (vehicleId, tickets) => {
   });
 };
 
+// Returns the next sequential number for late tickets on a given date and batch
+export const getNextLateTicketSequence = (dateStr, batchName, tickets) => {
+  const prefix = `${dateStr}${batchName === SHIFTS.BATCH_1.name ? '06' : '15'}`;
+  const existingTickets = tickets.filter(t => t.id.startsWith(prefix));
+  if (existingTickets.length === 0) return 1;
+  
+  const sequences = existingTickets.map(t => {
+    const seqStr = t.id.slice(-4); // Last 4 characters
+    return parseInt(seqStr, 10);
+  }).filter(seq => !isNaN(seq));
+  
+  return Math.max(...sequences, 0) + 1;
+};
+
 // ─── Custom Hook ──────────────────────────────────────────────────────────────
 export function useTicket() {
   const [tickets, setTickets] = useState([]);
@@ -53,6 +67,9 @@ export function useTicket() {
   const [issueError, setIssueError] = useState("");
   const [missedBatchWarning, setMissedBatchWarning] = useState("");
   const [overrideMissedBatch, setOverrideMissedBatch] = useState(false);
+  const [isLateMode, setIsLateMode] = useState(false);
+  const [lateDate, setLateDate] = useState(new Date().toISOString().split('T')[0]);
+  const [lateBatch, setLateBatch] = useState(SHIFTS.BATCH_1.name);
 
   // Fetch data
   const fetchTickets = async () => {
@@ -75,7 +92,9 @@ export function useTicket() {
   useEffect(() => { 
     fetchTickets(); 
     fetchVehicles(); 
-    fetchDrivers(); 
+    fetchDrivers();
+    fetchLateVehicles();
+    fetchLateDrivers();
   }, []);
 
   // Filter and sort tickets based on search term
@@ -90,6 +109,19 @@ export function useTicket() {
       new Date(b.issued_at) - new Date(a.issued_at)
     );
     setFilteredTickets(sorted.slice(0, 10));
+    
+    //para sa late func din
+    const fetchLateVehicles = async () => {
+      const res = await fetch("/api/late_issue_records");
+      const data = await res.json();
+      setAvailableVehicles(data.vehicles); // includes ON_TRIP, MAINTENANCE, etc.
+    };
+
+    const fetchLateDrivers = async () => {
+      const res = await fetch("/api/late_issue_records");
+      const data = await res.json();
+      setActiveDrivers(data.drivers); // includes INACTIVE too
+    };
   }, [searchTerm, tickets]);
 
 
@@ -115,7 +147,7 @@ export function useTicket() {
   };
 
   // Issue ticket handler
-  const handleIssueTicket = async () => {
+  const handleIssueTicket = async (isLate = false, lateDate = null, lateBatch = null) => {
     setSuccessMessage("");
     setIssueError("");
     setMissedBatchWarning("");
@@ -123,28 +155,32 @@ export function useTicket() {
     if (!selectedVehicle) { setIssueError("Please select a vehicle."); return; }
     if (!selectedDriver) { setIssueError("Please select a driver."); return; }
 
-    // Batch window check
-    const currentBatch = getCurrentBatch();
-    if (!currentBatch) {
-      const hour = new Date().getHours();
-      const tooEarly = hour < SHIFTS.BATCH_1.startHour;
-      setIssueError(
-        tooEarly
-          ? `Ticket issuance hasn't opened yet. Batch 1 starts at ${SHIFTS.BATCH_1.startHour}:00 AM.`
-          : `Ticket issuance is closed. Operations end at ${SHIFTS.BATCH_2.endHour}:00 PM.`
-      );
-      return;
-    }
-
-    // Missed Batch 1 check
-    if (currentBatch === SHIFTS.BATCH_2.name && !hadBatch1TicketToday(selectedVehicle.id, tickets)) {
-      if (!missedBatchWarning) {
-        setMissedBatchWarning(
-          `Check the box below if this is a late issuance so it is recorded under Batch 1.`
+    // For late tickets, skip batch window checks
+    if (!isLate) {
+      // Batch window check
+      const currentBatch = getCurrentBatch();
+      if (!currentBatch) {
+        const hour = new Date().getHours();
+        const tooEarly = hour < SHIFTS.BATCH_1.startHour;
+        setIssueError(
+          tooEarly
+            ? `Ticket issuance hasn't opened yet. Batch 1 starts at ${SHIFTS.BATCH_1.startHour}:00 AM.`
+            : `Ticket issuance is closed. Operations end at ${SHIFTS.BATCH_2.endHour}:00 PM.`
         );
         return;
       }
+
+      // Missed Batch 1 check
+      if (currentBatch === SHIFTS.BATCH_2.name && !hadBatch1TicketToday(selectedVehicle.id, tickets)) {
+        if (!missedBatchWarning) {
+          setMissedBatchWarning(
+            `Check the box below if this is a late issuance so it is recorded under Batch 1.`
+          );
+          return;
+        }
+      }
     }
+
 
     // Vehicle must be AVAILABLE
     if (selectedVehicle.status !== "AVAILABLE") {
@@ -163,9 +199,22 @@ export function useTicket() {
 
     try {
       setIssuingTicket(true);
-      const now = new Date();
-      const ticketId = `TICKET-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-      const isLate = overrideMissedBatch;
+      let ticketId;
+      let intendedBatch = "";
+
+      if (isLate && lateDate && lateBatch) {
+        // Generate late ticket ID: YYYYMMDDHH0001 (sequential)
+        const dateStr = lateDate.replace(/-/g, '');
+        const hourStr = lateBatch === SHIFTS.BATCH_1.name ? '06' : '15';
+        const sequence = getNextLateTicketSequence(lateDate, lateBatch, tickets);
+        ticketId = `${dateStr}${hourStr}${String(sequence).padStart(4, '0')}`;
+        intendedBatch = lateBatch;
+      } else {
+        // Normal ticket ID generation
+        const now = new Date();
+        ticketId = `TICKET-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+      }
+
       const newTicket = await apiService.createTicket({
         id: ticketId,
         vehicle_id: selectedVehicle.id,
@@ -175,7 +224,7 @@ export function useTicket() {
         collection_amount: TICKET_FEE,
         is_verified: false,
         is_late: isLate,
-        intended_batch: isLate ? SHIFTS.BATCH_1.name : "",
+        intended_batch: intendedBatch,
       });
       setSuccessMessage(`Ticket ${newTicket.id} issued successfully.`);
       fetchTickets();
