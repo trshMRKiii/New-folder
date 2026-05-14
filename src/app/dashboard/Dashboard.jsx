@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { apiService } from "../../lib/api-service";
 import "../../styles/Dashboard.css";
+import schedule from "../../../backend/schedules.json";
 
 const peso = (n) => {
   const num = parseFloat(n);
@@ -170,6 +171,7 @@ export default function Dashboard() {
                       }
                     />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
+
                     <Line
                       type="monotone"
                       dataKey="batch1_count"
