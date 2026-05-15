@@ -130,9 +130,12 @@ def filter_collected(start_date=None, end_date=None):
     return qs
 
 
-def summarize(ticket_list):
+def summarize(ticket_list, fallback_amount=0.0):
     count = len(ticket_list)
-    total = round(sum(float(t.collection_amount or 0) for t in ticket_list), 2)
+    total = round(sum(
+        float(t.collection_amount) if (t.collection_amount is not None and float(t.collection_amount) > 0) else fallback_amount
+        for t in ticket_list
+    ), 2)
     return {'count': count, 'total': total}
 
 @api_view(['POST'])
@@ -199,22 +202,29 @@ def report_summary(request):
         datetime(now_ph.year, now_ph.month, now_ph.day, 23, 59, 59) - timedelta(hours=8)
     )
 
+    # Fallback price for tickets with null/zero collection_amount
+    latest_price = TicketPrice.objects.order_by('-effective_date').first()
+    fallback_amount = float(latest_price.amount) if latest_price else 0.0
+
     schedule = load_schedule()
     batch_stats = {}
     for key in schedule.keys():
-        # normalize key for frontend compatibility: BATCH_1 → batch1
-        normalized = key.lower().replace("_", "")
+        normalized = key.lower().replace("_", "")  # "BATCH_1" → "batch1"
         batch_tickets = [t for t in tickets if get_batch(t) == key]
-        batch_stats[normalized] = summarize(batch_tickets)
+        batch_stats[normalized] = summarize(batch_tickets, fallback_amount)
 
     today = [t for t in tickets if today_utc_start <= t.issued_at <= today_utc_end]
 
     return Response({
         **batch_stats,
-        'today': summarize(today),
-        'grand_total': round(sum(float(t.collection_amount or 0) for t in tickets), 2),
+        'today': summarize(today, fallback_amount),
+        'grand_total': round(sum(
+            float(t.collection_amount) if (t.collection_amount and float(t.collection_amount) > 0) else fallback_amount
+            for t in tickets
+        ), 2),
         'total_tickets': len(tickets),
     })
+
 
 
 
@@ -252,11 +262,18 @@ def report_daily_chart(request):
     tickets = filter_collected(start_date, end_date)
     schedule = load_schedule()
 
+    # Fallback price: used when a ticket's collection_amount is null or zero
+    latest_price = TicketPrice.objects.order_by('-effective_date').first()
+    fallback_amount = float(latest_price.amount) if latest_price else 0.0
+
     daily = {}
     for t in tickets:
         local_dt = t.issued_at + timedelta(hours=8)
         day_key = local_dt.strftime('%Y-%m-%d')
         batch = get_batch(t)  # returns "BATCH_1", "BATCH_2", etc.
+
+        # compute amount with fallback
+        amount = float(t.collection_amount) if (t.collection_amount and float(t.collection_amount) > 0) else fallback_amount
 
         if day_key not in daily:
             daily[day_key] = {'date': day_key}
@@ -267,9 +284,9 @@ def report_daily_chart(request):
                 daily[day_key][f"{normalized}_total"] = 0.0
 
         if batch:
-            normalized = batch.lower().replace("_", "")   # use the actual batch
+            normalized = batch.lower().replace("_", "")
             daily[day_key][f"{normalized}_count"] += 1
-            daily[day_key][f"{normalized}_total"] += float(t.collection_amount or 0)
+            daily[day_key][f"{normalized}_total"] = round(daily[day_key][f"{normalized}_total"] + amount, 2)
 
     return Response({'chart_data': sorted(daily.values(), key=lambda x: x['date'])})
 
@@ -315,23 +332,28 @@ def dashboard_stats(request):
         dispatched_at__gte=today_start
     )
 
+    # Fallback price for tickets with null collection_amount
+    latest_price = TicketPrice.objects.order_by('-effective_date').first()
+    fallback_amount = float(latest_price.amount) if latest_price else 0.0
+
+    # Dynamic batches from schedule.json
     schedule = load_schedule()
     batch_stats = {}
     for key in schedule.keys():
         batch_tickets = [t for t in today_dispatched if get_batch(t) == key]
-        # normalize key: BATCH_1 → batch1
         normalized = key.lower().replace("_", "")
-        batch_stats[f"{normalized}_today"] = summarize(batch_tickets)
+        batch_stats[f"{normalized}_today"] = summarize(batch_tickets, fallback_amount)
 
     return Response({
         **batch_stats,
-        'today_total': summarize(today_dispatched),
+        'today_total': summarize(today_dispatched, fallback_amount),
         'total_tickets': Ticket.objects.count(),
         'total_dispatched': Ticket.objects.filter(dispatched_at__isnull=False).count(),
         'total_revenue': round(float(today_dispatched.aggregate(s=Sum('collection_amount'))['s'] or 0), 2),
         'active_vehicles': Vehicle.objects.filter(is_archived=False).count(),
         'active_drivers': Driver.objects.filter(is_archived=False).count(),
     })
+
 
 
 

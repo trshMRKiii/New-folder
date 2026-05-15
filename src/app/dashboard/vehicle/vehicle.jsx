@@ -4,11 +4,10 @@ import {
   useVehicle,
   STATUS_COLOR,
   STATUS_LABEL,
+  DESTINATION,
 } from "../../../lib/vehicle/vehicleHook";
 
 import React, { useState } from "react";
-import { apiService } from "../../../lib/api-service";
-
 import "../../../styles/Vehicle.css";
 
 function Vehicle() {
@@ -35,123 +34,18 @@ function Vehicle() {
     handleDelete,
   } = useVehicle();
 
-  const resolveRouteId = async () => {
-    if (routeMode === "select") {
-      if (!form.route) return { routeId: null, err: "Please select a route." };
-      return { routeId: form.route, err: null };
-    }
-    if (routeMode === "new") {
-      const origin = newOrigin.trim();
-      if (!origin)
-        return { routeId: null, err: "Please enter a route origin." };
-      const existing = routes.find(
-        (r) => r.origin.toLowerCase() === origin.toLowerCase(),
-      );
-      if (existing) return { routeId: existing.id, err: null };
-      const created = await apiService.createRoute({ origin });
-      setRoutes((prev) => [...prev, created]);
-      return { routeId: created.id, err: null };
-    }
-    if (routeMode === "edit") {
-      const origin = newOrigin.trim();
-      if (!origin)
-        return { routeId: null, err: "Please enter a route origin." };
-      const existing = routes.find(
-        (r) =>
-          r.origin.toLowerCase() === origin.toLowerCase() &&
-          r.id !== form.route,
-      );
-      if (existing) return { routeId: existing.id, err: null };
-      const updated = await apiService.updateRoute(form.route, { origin });
-      setRoutes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-      return { routeId: updated.id, err: null };
-    }
-    return { routeId: null, err: "Unknown route mode." };
-  };
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const RouteField = () => (
-    <Field label="Route">
-      {routeMode === "select" && (
-        <>
-          <select
-            className="veh-select"
-            value={form.route}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                route: e.target.value ? Number(e.target.value) : "",
-              })
-            }
-          >
-            <option value="">— Select a route —</option>
-            {routes
-              .filter((r) => r.is_active)
-              .map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.full_name}
-                </option>
-              ))}
-          </select>
-          <div className="veh-route-actions">
-            <button
-              type="button"
-              className="veh-text-btn veh-text-btn--navy"
-              onClick={() => {
-                setRouteMode("new");
-                setNewOrigin("");
-              }}
-            >
-              + Add new route
-            </button>
-            {editing && form.route && (
-              <button
-                type="button"
-                className="veh-text-btn veh-text-btn--gold"
-                onClick={() => {
-                  setRouteMode("edit");
-                  setNewOrigin(selectedRoute?.origin ?? "");
-                }}
-              >
-                Edit this route's origin
-              </button>
-            )}
-          </div>
-        </>
-      )}
-
-      {(routeMode === "new" || routeMode === "edit") && (
-        <>
-          <div className="veh-route-input-row">
-            <input
-              type="text"
-              className="veh-input"
-              placeholder="e.g. Lingsat"
-              value={newOrigin}
-              onChange={(e) => setNewOrigin(e.target.value)}
-              autoFocus
-            />
-            <span className="veh-route-dest">— {DESTINATION}</span>
-          </div>
-          <p className="veh-field-hint">
-            Destination is always <strong>{DESTINATION}</strong>. Enter the
-            origin only.
-          </p>
-          <button
-            type="button"
-            className="veh-text-btn veh-text-btn--navy"
-            onClick={() => {
-              setRouteMode("select");
-              setNewOrigin("");
-            }}
-          >
-            ← {routeMode === "edit" ? "Cancel edit" : "Back to route list"}
-          </button>
-        </>
-      )}
-
-      {routeError && <p className="veh-field-error">{routeError}</p>}
-    </Field>
-  );
+  const filteredVehicles = vehicles.filter((v) => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (v.code || "").toLowerCase().includes(q) ||
+      (v.plate_number || "").toLowerCase().includes(q) ||
+      (v.route_detail?.full_name || "").toLowerCase().includes(q) ||
+      (v.route_detail?.origin || "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="veh-page">
@@ -166,20 +60,33 @@ function Vehicle() {
             </p>
           </div>
         </div>
-        <button className="veh-add-btn" onClick={handleAdd}>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-          >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-          </svg>
-          Register Vehicle
-        </button>
+        <div className="veh-header-right">
+          <div className="veh-search-wrap">
+            <svg className="veh-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              className="veh-search"
+              placeholder="Search by code, plate, or route…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="veh-add-btn" onClick={handleAdd}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            Register Vehicle
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -229,7 +136,7 @@ function Vehicle() {
                     </div>
                   </td>
                 </tr>
-              ) : vehicles.length === 0 ? (
+              ) : filteredVehicles.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="veh-table-state">
                     <svg
@@ -246,11 +153,15 @@ function Vehicle() {
                       <circle cx="5.5" cy="18.5" r="2.5" />
                       <circle cx="18.5" cy="18.5" r="2.5" />
                     </svg>
-                    <span>No vehicle records found</span>
+                    <span>
+                      {vehicles.length === 0
+                        ? "No vehicle records found"
+                        : `No results for "${searchTerm}"`}
+                    </span>
                   </td>
                 </tr>
               ) : (
-                vehicles.map((vehicle) => (
+                filteredVehicles.map((vehicle) => (
                   <tr key={vehicle.id} className="veh-row">
                     <td>
                       <span className="veh-code">{vehicle.code}</span>
@@ -394,6 +305,7 @@ function Vehicle() {
                 routeError={routeError}
                 editing={editing}
                 selectedRoute={selectedRoute}
+                destination={DESTINATION}
               />
 
               <Field label="Status">

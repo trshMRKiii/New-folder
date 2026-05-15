@@ -37,6 +37,8 @@ function User() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
+  const [searchTerm, setSearchTerm] = useState("");
+
   const showConfirm = useConfirm();
 
   useEffect(() => {
@@ -148,6 +150,15 @@ function User() {
     }
   };
 
+  const filteredUsers = users.filter((u) => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (`${u.first_name} ${u.last_name}`).toLowerCase().includes(q) ||
+      (u.role || "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="usr-page">
       {/* Header */}
@@ -161,20 +172,33 @@ function User() {
             </p>
           </div>
         </div>
-        <button className="usr-add-btn" onClick={handleAdd}>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-          >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-          </svg>
-          Add Staff Account
-        </button>
+        <div className="usr-header-right">
+          <div className="usr-search-wrap">
+            <svg className="usr-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              className="usr-search"
+              placeholder="Search by name or role…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="usr-add-btn" onClick={handleAdd}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            Add Staff Account
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -201,7 +225,8 @@ function User() {
           <table className="usr-table">
             <thead>
               <tr>
-                {[                
+                {[
+                  "ID",
                   "Full Name",
                   "Email Address",
                   "Role",
@@ -223,7 +248,7 @@ function User() {
                     </div>
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="usr-table-state">
                     <svg
@@ -239,12 +264,19 @@ function User() {
                       <circle cx="9" cy="7" r="4" />
                       <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
-                    <span>No staff accounts found</span>
+                    <span>
+                      {users.length === 0
+                        ? "No staff accounts found"
+                        : `No results for "${searchTerm}"`}
+                    </span>
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                filteredUsers.map((user) => (
                   <tr key={user.id} className="usr-row">
+                    <td>
+                      <span className="usr-id-badge">#{user.id}</span>
+                    </td>
                     <td className="usr-td-name">
                       {user.first_name} {user.last_name}
                     </td>

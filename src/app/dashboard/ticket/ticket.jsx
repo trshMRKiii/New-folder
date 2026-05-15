@@ -96,6 +96,7 @@ function Ticket({ userRole }) {
         setNewTicketPrice={setNewTicketPrice}
         saveTicketPrice={saveTicketPrice}
         isSavingTicketPrice={isSavingTicketPrice}
+        userRole={userRole}
       />
 
       {/* ── Main Grid: left column (Issue + Late), right column (Recent Tickets) ── */}

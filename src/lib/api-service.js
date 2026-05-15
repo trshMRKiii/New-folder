@@ -12,7 +12,7 @@ export const apiService = {
     };
 
     //token
-    const token = localStorage.getItem("accessToken");
+    const token = sessionStorage.getItem("accessToken");
     if (token) {
       defaultHeaders["Authorization"] = `Bearer ${token}`;
     }
@@ -44,7 +44,7 @@ export const apiService = {
         const refreshed = await this.refreshToken();
         if (refreshed) {
           fetchOptions.headers["Authorization"] =
-            `Bearer ${localStorage.getItem("accessToken")}`;
+            `Bearer ${sessionStorage.getItem("accessToken")}`;
           response = await fetch(url, fetchOptions);
         }
       }
@@ -79,7 +79,7 @@ export const apiService = {
   },
 
   async refreshToken() {
-    const refresh = localStorage.getItem("refreshToken");
+    const refresh = sessionStorage.getItem("refreshToken");
     if (!refresh) {
       this.logout();
       return false;
@@ -98,7 +98,7 @@ export const apiService = {
       }
 
       const data = await response.json();
-      localStorage.setItem("accessToken", data.access);
+      sessionStorage.setItem("accessToken", data.access);
       return true;
     } catch {
       this.logout();
@@ -107,8 +107,8 @@ export const apiService = {
   },
 
   logout() {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("refreshToken");
     window.location.href = "/";
   },
 
@@ -289,8 +289,8 @@ export const handleLogin = async (
     }
 
     const data = await response.json();
-    localStorage.setItem("accessToken", data.access);
-    localStorage.setItem("refreshToken", data.refresh);
+    sessionStorage.setItem("accessToken", data.access);
+    sessionStorage.setItem("refreshToken", data.refresh);
 
     // Fetch current user to personalise welcome toast
     try {

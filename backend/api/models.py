@@ -129,10 +129,11 @@ class Ticket(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        if self.collection_amount is None:
+        if not self.collection_amount:
             latest_price = TicketPrice.objects.order_by('-effective_date').first()
             if latest_price:
                 self.collection_amount = latest_price.amount
+            # If no price exists, leave as null — backend will use fallback
         super().save(*args, **kwargs)
 
 class TicketPrice(models.Model):
@@ -144,4 +145,3 @@ class TicketPrice(models.Model):
 
     def __str__(self):
         return f"{self.amount} (effective {self.effective_date})"
-

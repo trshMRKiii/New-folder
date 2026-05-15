@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { apiService } from "../api-service";
 import { useConfirm } from "../../components/ui/ToastConfirmContext";
 
-const DESTINATION = "San Fernando";
+export const DESTINATION = "San Fernando";
 
 const EMPTY_FORM = {
   plate_number: "",
@@ -43,6 +43,7 @@ export const RouteField = ({
   routeError,
   editing,
   selectedRoute,
+  destination = DESTINATION,
 }) => (
   <Field label="Route">
     {routeMode === "select" && (
@@ -104,10 +105,10 @@ export const RouteField = ({
             onChange={(e) => setNewOrigin(e.target.value)}
             autoFocus
           />
-          <span className="veh-route-dest">— {DESTINATION}</span>
+          <span className="veh-route-dest">— {destination}</span>
         </div>
         <p className="veh-field-hint">
-          Destination is always <strong>{DESTINATION}</strong>. Enter the origin
+          Destination is always <strong>{destination}</strong>. Enter the origin
           only.
         </p>
         <button

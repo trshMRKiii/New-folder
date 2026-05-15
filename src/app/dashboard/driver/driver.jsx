@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useDriver } from "../../../lib/useDriver";
 import "../../../styles/Driver.css";
 
@@ -19,6 +19,17 @@ function Driver() {
     handleDelete,
   } = useDriver();
 
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredDrivers = drivers.filter((d) => {
+    const q = searchTerm.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (d.code || "").toLowerCase().includes(q) ||
+      (d.name || "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="drv-page">
       {/* Header */}
@@ -32,20 +43,33 @@ function Driver() {
             </p>
           </div>
         </div>
-        <button className="drv-add-btn" onClick={handleAdd}>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-          >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-          </svg>
-          Register Driver
-        </button>
+        <div className="drv-header-right">
+          <div className="drv-search-wrap">
+            <svg className="drv-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              className="drv-search"
+              placeholder="Search by code or name…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="drv-add-btn" onClick={handleAdd}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            Register Driver
+          </button>
+        </div>
       </div>
 
       {error && !isModalOpen && (
@@ -90,7 +114,7 @@ function Driver() {
                     </div>
                   </td>
                 </tr>
-              ) : drivers.length === 0 ? (
+              ) : filteredDrivers.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="drv-table-state">
                     <svg
@@ -105,11 +129,15 @@ function Driver() {
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
-                    <span>No driver records found</span>
+                    <span>
+                      {drivers.length === 0
+                        ? "No driver records found"
+                        : `No results for "${searchTerm}"`}
+                    </span>
                   </td>
                 </tr>
               ) : (
-                drivers.map((driver) => (
+                filteredDrivers.map((driver) => (
                   <tr key={driver.id} className="drv-row">
                     <td>
                       <span className="drv-code">{driver.code}</span>

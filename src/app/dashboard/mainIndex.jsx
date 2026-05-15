@@ -58,6 +58,8 @@ const ROLE_NAV = {
     "/dashboard/Ticket",
     "/dashboard/Dispatch",
     "/dashboard/Collections",
+    "/dashboard/Vehicles",
+    "/dashboard/Drivers",
     "/dashboard/Reports",
   ],
   PERSONNEL: [

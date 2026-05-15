@@ -454,3 +454,51 @@ select.usr-input {
   .usr-form-grid { grid-template-columns: 1fr; }
   .usr-modal-body { padding: 16px; }
 }
+.usr-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.usr-search-wrap {
+  position: relative;
+  width: 240px;
+}
+
+.usr-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.usr-search {
+  width: 100%;
+  padding: 7px 12px 7px 32px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.usr-search:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(26,39,68,0.08);
+}
+
+.dark .usr-search:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+}
+
+@media (max-width: 560px) {
+  .usr-header-right { flex-wrap: wrap; width: 100%; }
+  .usr-search-wrap { width: 100%; }
+  .usr-add-btn { width: 100%; justify-content: center; }
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -25,7 +25,31 @@ const peso = (n) => {
   );
 };
 
-// ─── Stat Card ─────────────────────────────────────────────────────────────────
+// ─── Custom Tooltip ──────────────────────────────────────────────────────────
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className="chart-tooltip">
+      <div className="chart-tooltip-label">{label}</div>
+      {payload.map((entry) => (
+        <div
+          key={entry.dataKey}
+          className="chart-tooltip-row"
+          style={{ color: entry.fill }}
+        >
+          <span className="chart-tooltip-name">{entry.name}</span>
+          <span className="chart-tooltip-value">
+            {entry.dataKey.includes("total")
+              ? `₱${Number(entry.value).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`
+              : `${entry.value} tickets`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Stat Card ───────────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, icon }) {
   return (
     <div className="stat-card">
@@ -39,12 +63,15 @@ function StatCard({ label, value, sub, icon }) {
   );
 }
 
-// ─── Main Dashboard ────────────────────────────────────────────────────────────
+// ─── Main Dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // "tickets" | "revenue"
+  const [chartMode, setChartMode] = useState("tickets");
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -56,9 +83,15 @@ export default function Dashboard() {
           apiService.getReportChart(),
         ]);
         setStats(statsData);
-        // Last 14 days for dashboard chart
         const data = (chartJson.chart_data || []).slice(-14);
         setChartData(data);
+        // Routes fetched separately so a failure doesn't kill the dashboard
+        try {
+          const routeData = await apiService.getRoutes();
+          setRoutes(Array.isArray(routeData) ? routeData : []);
+        } catch {
+          setRoutes([]);
+        }
       } catch (e) {
         setError("Failed to load dashboard data.");
       } finally {
@@ -67,6 +100,13 @@ export default function Dashboard() {
     };
     fetchAll();
   }, []);
+
+  // Derive Y-axis tick formatter and bar data keys from chartMode
+  const isRevenue = chartMode === "revenue";
+  const yTickFormatter = isRevenue
+    ? (v) =>
+        `₱${Number(v).toLocaleString("en-PH", { maximumFractionDigits: 0 })}`
+    : (v) => `${v}`;
 
   return (
     <div className="dashboard-page">
@@ -93,7 +133,7 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          {/* ─── Today's Batch Cards ──────────────────────────────────────────── */}
+          {/* ─── Today's Batch Cards ─────────────────────────────────────────── */}
           <div>
             <div className="dashboard-section-label">Today's Collections</div>
             <div className="stat-cards-row">
@@ -114,7 +154,6 @@ export default function Dashboard() {
               />
             </div>
           </div>
-
           {/* ─── Overall Stats ────────────────────────────────────────────────── */}
           <div className="dashboard-section">
             <div className="dashboard-section-label">Overall</div>
@@ -129,90 +168,163 @@ export default function Dashboard() {
               />
             </div>
           </div>
+          {/* ─── Bar Chart + Routes Sidebar ─────────────────────────────────── */}
+          <div className="dashboard-chart-layout">
+            {/* 70% — chart panel */}
+            <div className="dashboard-chart-panel">
+              <div className="chart-card">
+                <div className="chart-card-header">
+                  <span className="chart-card-title">
+                    Collections Per Day — Batch 1 vs Batch 2
+                  </span>
+                  <div className="chart-card-controls">
+                    <div className="chart-mode-toggle">
+                      <button
+                        className={`chart-mode-btn${!isRevenue ? " chart-mode-btn--active" : ""}`}
+                        onClick={() => setChartMode("tickets")}
+                      >
+                        Tickets
+                      </button>
+                      <button
+                        className={`chart-mode-btn${isRevenue ? " chart-mode-btn--active" : ""}`}
+                        onClick={() => setChartMode("revenue")}
+                      >
+                        Revenue
+                      </button>
+                    </div>
+                    <span className="chart-card-badge">Last 14 days</span>
+                  </div>
+                </div>
 
-          {/* ─── Line Chart ──────────────────────────────────────────────────── */}
-          <div className="chart-card">
-            <div className="chart-card-header">
-              <span className="chart-card-title">
-                Collections Per Day — Batch 1 vs Batch 2
-              </span>
-              <span className="chart-card-badge">Last 14 days</span>
-            </div>
-            {chartData.length === 0 ? (
-              <div className="chart-empty">No data available for chart.</div>
-            ) : (
-              <div className="chart-card-body">
-                <ResponsiveContainer width="100%" height={240}>
-                  <LineChart
-                    data={chartData}
-                    margin={{ top: 4, right: 24, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="rgba(201,168,76,0.15)"
-                    />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: "#c9a84c" }}
-                    />
-                    <YAxis tick={{ fontSize: 11, fill: "#c9a84c" }} />
-                    <Tooltip
-                      contentStyle={{
-                        fontSize: 12,
-                        borderRadius: 8,
-                        border: "1px solid rgba(201,168,76,0.3)",
-                        background: "var(--bg-surface)",
-                        color: "var(--text-primary)",
-                      }}
-                      formatter={(value, name) =>
-                        name.includes("total")
-                          ? `₱${Number(value).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`
-                          : `${value} tickets`
-                      }
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-
-                    <Line
-                      type="monotone"
-                      dataKey="batch1_count"
-                      name="Batch 1 — Tickets"
-                      stroke="#c9a84c"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="batch2_count"
-                      name="Batch 2 — Tickets"
-                      stroke="#2d3e5f"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="batch1_total"
-                      name="Batch 1 — Amount (₱)"
-                      stroke="rgba(201,168,76,0.45)"
-                      strokeWidth={1.5}
-                      strokeDasharray="5 3"
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="batch2_total"
-                      name="Batch 2 — Amount (₱)"
-                      stroke="rgba(45,62,95,0.45)"
-                      strokeWidth={1.5}
-                      strokeDasharray="5 3"
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {chartData.length === 0 ? (
+                  <div className="chart-empty">
+                    No data available for chart.
+                  </div>
+                ) : (
+                  <div className="chart-card-body">
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart
+                        data={chartData}
+                        margin={{ top: 8, right: 24, left: 0, bottom: 0 }}
+                        barCategoryGap="30%"
+                        barGap={3}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="rgba(201,168,76,0.15)"
+                          vertical={false}
+                        />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: "#c9a84c" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#c9a84c" }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={yTickFormatter}
+                          width={isRevenue ? 72 : 32}
+                        />
+                        <Tooltip
+                          content={<CustomTooltip />}
+                          cursor={{ fill: "rgba(201,168,76,0.07)" }}
+                        />
+                        <Legend
+                          wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+                        />
+                        {isRevenue ? (
+                          <>
+                            <Bar
+                              dataKey="batch1_total"
+                              name="Batch 1 — Amount (₱)"
+                              fill="#c9a84c"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={32}
+                            />
+                            <Bar
+                              dataKey="batch2_total"
+                              name="Batch 2 — Amount (₱)"
+                              fill="#2d3e5f"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={32}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <Bar
+                              dataKey="batch1_count"
+                              name="Batch 1 — Tickets"
+                              fill="#c9a84c"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={32}
+                            />
+                            <Bar
+                              dataKey="batch2_count"
+                              name="Batch 2 — Tickets"
+                              fill="#2d3e5f"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={32}
+                            />
+                          </>
+                        )}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>{" "}
+              {/* closes chart-card */}
+            </div>{" "}
+            {/* closes dashboard-chart-panel */}
+            {/* 30% — routes sidebar */}
+            <div className="dashboard-routes-sidebar">
+              <div className="dashboard-routes-sidebar-header accent-navy">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
+                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <span>Route List</span>
+                <span className="dashboard-routes-sidebar-count">
+                  {routes.length}
+                </span>
               </div>
-            )}
-          </div>
+              <div className="dashboard-routes-sidebar-body">
+                {routes.length === 0 ? (
+                  <div className="dashboard-routes-sidebar-empty">
+                    No routes registered
+                  </div>
+                ) : (
+                  routes.map((route, idx) => (
+                    <div key={route.id} className="dashboard-route-item">
+                      <div className="dashboard-route-item-index">
+                        {idx + 1}
+                      </div>
+                      <div className="dashboard-route-item-info">
+                        <span className="dashboard-route-item-name">
+                          {route.full_name || route.origin}
+                        </span>
+                        {route.origin && route.full_name && (
+                          <span className="dashboard-route-item-sub">
+                            {route.origin}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>{" "}
+            {/* closes dashboard-routes-sidebar */}
+          </div>{" "}
+          {/* closes dashboard-chart-layout */}
         </>
       )}
     </div>
