@@ -1,10 +1,11 @@
 import { DataTable } from "../../../components/ui/dataTable";
+import { useState } from "react";
 
 export default function TransactionLogs({
   logsTotal,
   showAllLogs,
   setShowAllLogs,
-  visibleLogs,
+  filteredLogs,
   handleExportLogsCSV,
   STATUS_COLORS,
   cardStyle,
@@ -13,25 +14,37 @@ export default function TransactionLogs({
   btnExport,
   btnSecondary,
 }) {
+  const [page, setPage] = useState(0);
+  const pageSize = showAllLogs ? 20 : 5;
+  const start = page * pageSize;
+  const end = start + pageSize;
+  const visibleLogs = filteredLogs.slice(start, end);
+
   return (
     <div className="rpt-card rpt-section">
       <div className="rpt-card-header">
         <div className="rpt-card-header-left">
           <span className="rpt-card-title">Transaction Logs</span>
           <span className="rpt-record-count">
-            {showAllLogs ? logsTotal : Math.min(5, logsTotal)} of {logsTotal} records
+            {visibleLogs.length} of {logsTotal} records
           </span>
         </div>
         <div className="rpt-card-header-actions">
-          {logsTotal > 5 && (
-            <button className="rpt-btn rpt-btn--secondary" onClick={() => setShowAllLogs((v) => !v)}>
-              {showAllLogs ? "Show Less" : "View All Logs"}
-            </button>
-          )}
-          <button className="rpt-btn-export rpt-btn-export--green" onClick={handleExportLogsCSV}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          <button
+            className="rpt-btn-export rpt-btn-export--green"
+            onClick={handleExportLogsCSV}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Export CSV
           </button>
@@ -39,7 +52,16 @@ export default function TransactionLogs({
       </div>
 
       <DataTable
-        columns={["Timestamp", "Ticket ID", "Action", "Batch", "Driver", "Vehicle", "Route", "User"]}
+        columns={[
+          "Timestamp",
+          "Ticket ID",
+          "Action",
+          "Batch",
+          "Driver",
+          "Vehicle",
+          "Route",
+          "User",
+        ]}
         data={visibleLogs}
         rowRenderer={(l, idx, { rowClass, cellClass }) => (
           <tr key={l.id + idx} className={rowClass}>
@@ -57,7 +79,9 @@ export default function TransactionLogs({
               </span>
             </td>
             <td className={cellClass}>
-              <span className={`rpt-batch-pill ${l.batch === "Batch 1" ? "rpt-batch-pill--b1" : "rpt-batch-pill--b2"}`}>
+              <span
+                className={`rpt-batch-pill ${l.batch === "Batch 1" ? "rpt-batch-pill--b1" : "rpt-batch-pill--b2"}`}
+              >
                 {l.batch}
               </span>
             </td>
@@ -70,6 +94,40 @@ export default function TransactionLogs({
           </tr>
         )}
       />
+      <div className="flex justify-between">
+        {logsTotal > pageSize && (
+          <div className="rpt-pagination">
+            <button
+              className="rpt-btn rpt-btn--secondary"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </button>
+            <span>
+              Page {page + 1} of {Math.ceil(logsTotal / pageSize)}
+            </span>
+            <button
+              className="rpt-btn rpt-btn--secondary"
+              disabled={end >= logsTotal}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
+        {logsTotal > 5 && (
+          <button
+            className="rpt-btn rpt-btn--secondary"
+            onClick={() => {
+              setShowAllLogs((v) => !v);
+              setPage(0);
+            }}
+          >
+            {showAllLogs ? "Show Less" : "Show More"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

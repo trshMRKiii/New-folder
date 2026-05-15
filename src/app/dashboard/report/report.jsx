@@ -419,6 +419,7 @@ export default function Report() {
       <TransactionLogs
         logsTotal={logsTotal}
         showAllLogs={showAllLogs}
+        filteredLogs={logs}
         setShowAllLogs={setShowAllLogs}
         visibleLogs={showAllLogs ? logs : logs.slice(0, 5)}
         handleExportLogsCSV={handleExportLogsCSV}

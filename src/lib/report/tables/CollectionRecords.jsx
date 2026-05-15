@@ -1,11 +1,12 @@
 import { DataTable } from "../../../components/ui/dataTable";
+import { useState } from "react";
+
 export default function CollectionRecords({
   filters,
   setFilters,
   showAllCollections,
   setShowAllCollections,
   filteredCollections,
-  visibleCollections,
   handleExportCSV,
   handleExportPDF,
   peso,
@@ -15,6 +16,12 @@ export default function CollectionRecords({
   btnExport,
   btnSecondary,
 }) {
+  const [page, setPage] = useState(0);
+  const pageSize = showAllCollections ? 20 : 5;
+  const start = page * pageSize;
+  const end = start + pageSize;
+  const visibleCollections = filteredCollections.slice(start, end);
+
   return (
     <div className="rpt-card rpt-section">
       <div className="rpt-card-header">
@@ -134,19 +141,40 @@ export default function CollectionRecords({
           </span>
         </div>
       )}
-
-      {filteredCollections.length > 5 && (
-        <div className="rpt-show-more">
-          <button
-            className="rpt-btn rpt-btn--secondary"
-            onClick={() => setShowAllCollections((v) => !v)}
-          >
-            {showAllCollections
-              ? "Show Less"
-              : `View All ${filteredCollections.length} Records`}
-          </button>
-        </div>
-      )}
+      <div className="flex justify-between">
+        {filteredCollections.length > pageSize && (
+          <div className="rpt-pagination">
+            <button
+              className="rpt-btn rpt-btn--secondary"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </button>
+            <span>
+              Page {page + 1} of{" "}
+              {Math.ceil(filteredCollections.length / pageSize)}
+            </span>
+            <button
+              className="rpt-btn rpt-btn--secondary"
+              disabled={end >= filteredCollections.length}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
+        <div></div>
+        <button
+          className="rpt-btn rpt-btn--secondary"
+          onClick={() => {
+            setShowAllCollections((v) => !v);
+            setPage(0);
+          }}
+        >
+          {showAllCollections ? "Show Less" : "View All Logs"}
+        </button>
+      </div>
     </div>
   );
 }
