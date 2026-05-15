@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiService } from "./api-service";
+import { useConfirm } from "../components/ui/ToastConfirmContext";
 
 export function useTicketPrice() {
   const [ticketFee, setTicketFee] = useState(0);
@@ -8,6 +9,7 @@ export function useTicketPrice() {
   const [isTicketPriceModalOpen, setIsTicketPriceModalOpen] = useState(false);
   const [newTicketPrice, setNewTicketPrice] = useState("");
   const [isSavingTicketPrice, setIsSavingTicketPrice] = useState(false);
+  const showConfirm = useConfirm();
 
   const fetchTicketFee = async () => {
     try {

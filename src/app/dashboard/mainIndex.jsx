@@ -37,8 +37,8 @@ const NAV_ITEMS = [
 const ROLE_NAV = {
   ADMIN: [
     "/dashboard",
-    "/dashboard/Dispatch",
     "/dashboard/Ticket",
+    "/dashboard/Dispatch",
     "/dashboard/Collections",
     "/dashboard/Vehicles",
     "/dashboard/Drivers",
@@ -48,6 +48,8 @@ const ROLE_NAV = {
   MANAGER: [
     "/dashboard",
     "/dashboard/Collections",
+    "/dashboard/Vehicles",
+    "/dashboard/Drivers",
     "/dashboard/StaffRegistry",
     "/dashboard/Reports",
   ],

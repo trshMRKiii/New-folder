@@ -5,6 +5,10 @@ from rest_framework.response import Response
 from django.db.models import Sum
 from django.utils import timezone
 from datetime import datetime, timedelta, timezone as dt_timezone
+
+import json, os
+from django.conf import settings
+
 from .models import User, Driver, Vehicle, Route, Ticket, TicketPrice
 from .serializers import UserSerializer, DriverSerializer, VehicleSerializer, RouteSerializer, TicketSerializer, TicketPriceSerializer
 from rest_framework.views import APIView
@@ -51,11 +55,19 @@ class TicketPriceViewSet(viewsets.ModelViewSet):
     queryset = TicketPrice.objects.all()
     serializer_class = TicketPriceSerializer
 
+#batch
+def load_schedule():
+    schedule_path = os.path.join(settings.BASE_DIR, "schedules.json")
+    with open(schedule_path, "r") as f:
+        return json.load(f)
 
-# Batch 1 = 05:00–11:59 (PH time, UTC+8), Batch 2 = 12:00–23:59
 def get_batch(ticket):
     local_hour = (ticket.issued_at + timedelta(hours=8)).hour
-    return 'Batch 1' if 5 <= local_hour <= 15 else 'Batch 2'
+    schedule = load_schedule()
+    for key, shift in schedule.items():
+        if shift["startHour"] <= local_hour < shift["endHour"]:
+            return key
+    return None
 
 
 def parse_date_start(date_str):
@@ -73,7 +85,10 @@ def parse_date_end(date_str):
 
 
 def get_batch_code(batch_name):
-    return '06' if batch_name == 'Batch 1' else '15'
+    schedule = load_schedule()
+    # Map batch names to codes dynamically
+    codes = {name.replace("_", " ").title(): str(shift["startHour"]).zfill(2) for name, shift in schedule.items()}
+    return codes.get(batch_name, "00")
 
 
 def parse_iso_datetime(value):
@@ -177,20 +192,31 @@ def report_summary(request):
     tickets = list(filter_collected(start_date, end_date))
 
     now_ph = timezone.now() + timedelta(hours=8)
-    today_utc_start = timezone.make_aware(datetime(now_ph.year, now_ph.month, now_ph.day, 0, 0, 0) - timedelta(hours=8))
-    today_utc_end = timezone.make_aware(datetime(now_ph.year, now_ph.month, now_ph.day, 23, 59, 59) - timedelta(hours=8))
+    today_utc_start = timezone.make_aware(
+        datetime(now_ph.year, now_ph.month, now_ph.day, 0, 0, 0) - timedelta(hours=8)
+    )
+    today_utc_end = timezone.make_aware(
+        datetime(now_ph.year, now_ph.month, now_ph.day, 23, 59, 59) - timedelta(hours=8)
+    )
 
-    batch1 = [t for t in tickets if get_batch(t) == 'Batch 1']
-    batch2 = [t for t in tickets if get_batch(t) == 'Batch 2']
+    schedule = load_schedule()
+    batch_stats = {}
+    for key in schedule.keys():
+        # normalize key for frontend compatibility: BATCH_1 → batch1
+        normalized = key.lower().replace("_", "")
+        batch_tickets = [t for t in tickets if get_batch(t) == key]
+        batch_stats[normalized] = summarize(batch_tickets)
+
     today = [t for t in tickets if today_utc_start <= t.issued_at <= today_utc_end]
 
     return Response({
-        'batch1': summarize(batch1),
-        'batch2': summarize(batch2),
+        **batch_stats,
         'today': summarize(today),
         'grand_total': round(sum(float(t.collection_amount or 0) for t in tickets), 2),
         'total_tickets': len(tickets),
     })
+
+
 
 
 @api_view(['GET'])
@@ -224,20 +250,26 @@ def report_daily_chart(request):
     end_date = request.query_params.get('end_date')
 
     tickets = filter_collected(start_date, end_date)
+    schedule = load_schedule()
 
     daily = {}
     for t in tickets:
         local_dt = t.issued_at + timedelta(hours=8)
         day_key = local_dt.strftime('%Y-%m-%d')
-        batch = get_batch(t)
+        batch = get_batch(t)  # returns "BATCH_1", "BATCH_2", etc.
+
         if day_key not in daily:
-            daily[day_key] = {'date': day_key, 'batch1_count': 0, 'batch1_total': 0.0, 'batch2_count': 0, 'batch2_total': 0.0}
-        if batch == 'Batch 1':
-            daily[day_key]['batch1_count'] += 1
-            daily[day_key]['batch1_total'] += float(t.collection_amount or 0)
-        else:
-            daily[day_key]['batch2_count'] += 1
-            daily[day_key]['batch2_total'] += float(t.collection_amount or 0)
+            daily[day_key] = {'date': day_key}
+            # initialize dynamic batch keys
+            for key in schedule.keys():
+                normalized = key.lower().replace("_", "")  # "BATCH_1" → "batch1"
+                daily[day_key][f"{normalized}_count"] = 0
+                daily[day_key][f"{normalized}_total"] = 0.0
+
+        if batch:
+            normalized = batch.lower().replace("_", "")   # use the actual batch
+            daily[day_key][f"{normalized}_count"] += 1
+            daily[day_key][f"{normalized}_total"] += float(t.collection_amount or 0)
 
     return Response({'chart_data': sorted(daily.values(), key=lambda x: x['date'])})
 
@@ -274,24 +306,34 @@ def transaction_logs(request):
 @api_view(['GET'])
 def dashboard_stats(request):
     now_ph = timezone.now() + timedelta(hours=8)
-    today_utc_start = timezone.make_aware(datetime(now_ph.year, now_ph.month, now_ph.day, 0, 0, 0) - timedelta(hours=8))
+    today_start = timezone.make_aware(
+        datetime(now_ph.year, now_ph.month, now_ph.day, 0, 0, 0) - timedelta(hours=8)
+    )
 
-    all_collected = Ticket.objects.filter(status='COLLECTED')
-    today_collected = list(all_collected.filter(issued_at__gte=today_utc_start))
+    today_dispatched = Ticket.objects.filter(
+        dispatched_at__isnull=False,
+        dispatched_at__gte=today_start
+    )
 
-    batch1_today = [t for t in today_collected if get_batch(t) == 'Batch 1']
-    batch2_today = [t for t in today_collected if get_batch(t) == 'Batch 2']
+    schedule = load_schedule()
+    batch_stats = {}
+    for key in schedule.keys():
+        batch_tickets = [t for t in today_dispatched if get_batch(t) == key]
+        # normalize key: BATCH_1 → batch1
+        normalized = key.lower().replace("_", "")
+        batch_stats[f"{normalized}_today"] = summarize(batch_tickets)
 
     return Response({
-        'batch1_today': summarize(batch1_today),
-        'batch2_today': summarize(batch2_today),
-        'today_total': summarize(today_collected),
+        **batch_stats,
+        'today_total': summarize(today_dispatched),
         'total_tickets': Ticket.objects.count(),
-        'total_collected': all_collected.count(),
-        'total_revenue': round(float(all_collected.aggregate(s=Sum('collection_amount'))['s'] or 0), 2),
+        'total_dispatched': Ticket.objects.filter(dispatched_at__isnull=False).count(),
+        'total_revenue': round(float(today_dispatched.aggregate(s=Sum('collection_amount'))['s'] or 0), 2),
         'active_vehicles': Vehicle.objects.filter(is_archived=False).count(),
         'active_drivers': Driver.objects.filter(is_archived=False).count(),
     })
+
+
 
 
 @api_view(['GET'])

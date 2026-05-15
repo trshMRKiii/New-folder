@@ -128,13 +128,27 @@ function Collection({ userRole }) {
               setIsScheduleModalOpen(true);
             }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
             Batch Schedule
             <span className="col-schedule-btn__edit">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
@@ -193,7 +207,6 @@ function Collection({ userRole }) {
                   batchKey={shift.name}
                   onVerify={handleVerifyBatchWithConfirm}
                   verifyingBatch={verifyingBatch}
-                 
                 />
               );
             })
@@ -411,11 +424,17 @@ function Collection({ userRole }) {
           onClick={() => setConfirmingBatchKey(null)}
         >
           <div className="col-sched-modal" onClick={(e) => e.stopPropagation()}>
-
             {/* Header */}
             <div className="col-sched-modal-header">
               <div className="col-sched-modal-header-left">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#c9a84c"
+                  strokeWidth="2"
+                >
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
@@ -427,7 +446,14 @@ function Collection({ userRole }) {
                 onClick={() => setConfirmingBatchKey(null)}
                 aria-label="Close"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
                   <path d="M18 6 6 18" />
                   <path d="m6 6 12 12" />
                 </svg>
@@ -438,11 +464,14 @@ function Collection({ userRole }) {
             <div className="col-sched-modal-body">
               <div className="col-sched-batch-label-row">
                 <span className="col-sched-batch-name">Batch</span>
-                <span className="col-sched-batch-preview">{confirmingBatchKey}</span>
+                <span className="col-sched-batch-preview">
+                  {confirmingBatchKey}
+                </span>
               </div>
 
               <p className="col-sched-note" style={{ marginTop: 12 }}>
-                All pending tickets in <strong>{confirmingBatchKey}</strong> will be marked as verified. This action cannot be undone.
+                All pending tickets in <strong>{confirmingBatchKey}</strong>{" "}
+                will be marked as verified. This action cannot be undone.
               </p>
             </div>
 
@@ -460,7 +489,14 @@ function Collection({ userRole }) {
                 className="col-sched-modal-btn col-sched-modal-btn--submit"
                 onClick={confirmBatchVerification}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
@@ -583,11 +619,17 @@ function Collection({ userRole }) {
           onClick={() => setIsScheduleModalOpen(false)}
         >
           <div className="col-sched-modal" onClick={(e) => e.stopPropagation()}>
-
             {/* Header */}
             <div className="col-sched-modal-header">
               <div className="col-sched-modal-header-left">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#c9a84c"
+                  strokeWidth="2"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
@@ -599,7 +641,14 @@ function Collection({ userRole }) {
                 onClick={() => setIsScheduleModalOpen(false)}
                 aria-label="Close"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                >
                   <path d="M18 6 6 18" />
                   <path d="m6 6 12 12" />
                 </svg>
@@ -609,11 +658,16 @@ function Collection({ userRole }) {
             {/* Body */}
             <div className="col-sched-modal-body">
               {Object.entries(editingShifts).map(([key, shift], idx, arr) => (
-                <div key={key} className={`col-sched-batch-block${idx < arr.length - 1 ? " col-sched-batch-block--bordered" : ""}`}>
+                <div
+                  key={key}
+                  className={`col-sched-batch-block${idx < arr.length - 1 ? " col-sched-batch-block--bordered" : ""}`}
+                >
                   {/* Current schedule display — mirrors ticket-price-current */}
                   <div className="col-sched-batch-label-row">
                     <span className="col-sched-batch-name">{shift.name}</span>
-                    <span className="col-sched-batch-preview">{shift.label}</span>
+                    <span className="col-sched-batch-preview">
+                      {shift.label}
+                    </span>
                   </div>
 
                   {/* Start & End hour inputs side-by-side */}
@@ -622,7 +676,14 @@ function Collection({ userRole }) {
                       <label className="col-sched-label">Start Hour</label>
                       <div className="col-sched-input-wrap">
                         <span className="col-sched-input-prefix">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12" />
                           </svg>
@@ -634,14 +695,26 @@ function Collection({ userRole }) {
                           className="col-sched-input"
                           value={shift.startHour}
                           onChange={(e) =>
-                            handleScheduleFieldChange(key, "startHour", e.target.value)
+                            handleScheduleFieldChange(
+                              key,
+                              "startHour",
+                              e.target.value,
+                            )
                           }
                         />
                       </div>
                     </div>
 
                     <div className="col-sched-hours-divider">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.4">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        opacity="0.4"
+                      >
                         <path d="M5 12h14" />
                         <path d="m12 5 7 7-7 7" />
                       </svg>
@@ -651,7 +724,14 @@ function Collection({ userRole }) {
                       <label className="col-sched-label">End Hour</label>
                       <div className="col-sched-input-wrap">
                         <span className="col-sched-input-prefix">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 12 16 14" />
                           </svg>
@@ -663,7 +743,11 @@ function Collection({ userRole }) {
                           className="col-sched-input"
                           value={shift.endHour}
                           onChange={(e) =>
-                            handleScheduleFieldChange(key, "endHour", e.target.value)
+                            handleScheduleFieldChange(
+                              key,
+                              "endHour",
+                              e.target.value,
+                            )
                           }
                         />
                       </div>
@@ -673,7 +757,8 @@ function Collection({ userRole }) {
               ))}
 
               <p className="col-sched-note">
-                Changes take effect immediately after saving. Tickets already issued retain their original batch assignment.
+                Changes take effect immediately after saving. Tickets already
+                issued retain their original batch assignment.
               </p>
             </div>
 
@@ -691,7 +776,14 @@ function Collection({ userRole }) {
                 className="col-sched-modal-btn col-sched-modal-btn--submit"
                 onClick={handleSaveSchedule}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                   <polyline points="17 21 17 13 7 13 7 21" />
                   <polyline points="7 3 7 8 15 8" />

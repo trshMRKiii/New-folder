@@ -57,18 +57,11 @@ export function useCollection(shifts, userRole) {
 
   const isBatchVerifiable = (batchKey) => {
     const now = new Date();
-    const hour = now.getHours();
     const normalizedKey = batchKey.toLowerCase().replace(/\s+/g, "");
     const verifiedDate = verifiedBatches[normalizedKey];
     const today = getTodayDateString(now);
 
-    if (verifiedDate === today) return false; // Already verified today
-
-    const shift = getShiftByName(batchKey);
-    if (shift) {
-      return hour >= shift.endHour;
-    }
-    return false;
+    return verifiedDate !== today;
   };
 
   useEffect(() => {
@@ -125,8 +118,7 @@ export function useCollection(shifts, userRole) {
           isTodayTicket(t) &&
           !t.is_verified &&
           t.status !== "CANCELLED" &&
-          t.vehicle?.status !== "QUEUED" &&
-          OperationsService.getEffectiveBatchName(t, shifts) === batchName,
+          t.vehicle?.status !== "QUEUED",
       );
 
       if (batchTickets.length === 0) {
@@ -230,7 +222,7 @@ export const BatchCard = ({
   batchKey,
   onVerify,
   verifyingBatch,
-  userRole
+  userRole,
 }) => (
   <div className="bc-card">
     <div className="bc-header">
