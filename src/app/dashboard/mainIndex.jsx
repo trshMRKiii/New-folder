@@ -25,8 +25,8 @@ import sfcLogo from "../../pictures/sfc-nobg-logo.png";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", Icon: DashboardIcon },
-  { to: "/dashboard/Dispatch", label: "Dispatch", Icon: DispatchIcon },
   { to: "/dashboard/Ticket", label: "Tickets", Icon: TicketIcon },
+  { to: "/dashboard/Dispatch", label: "Dispatch", Icon: DispatchIcon },
   { to: "/dashboard/Collections", label: "Collections", Icon: CollectionsIcon },
   { to: "/dashboard/Vehicles", label: "Vehicles Registry", Icon: VehicleIcon },
   { to: "/dashboard/Drivers", label: "Drivers Registry", Icon: DriverIcon },
