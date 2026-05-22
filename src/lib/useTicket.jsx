@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { OperationsService } from "./operations-service";
-import { SHIFTS } from "./constants";
 import { apiService } from "./api-service";
 import { useTicketPrice } from "./useTicketPrice";
 import { useShifts } from "./useShifts";
@@ -27,34 +26,34 @@ export const formatTime = (dateString) => {
 };
 
 // Returns the current batch ("Batch 1" | "Batch 2" | null)
-export const getCurrentBatch = (shifts = SHIFTS) => {
-  const hour = new Date().getHours();
-  const activeShifts = Object.keys(shifts || {}).length ? shifts : SHIFTS;
-  for (const shift of Object.values(activeShifts)) {
-    if (hour >= shift.startHour && hour < shift.endHour) {
-      return shift.name;
-    }
-  }
-  return null;
-};
+// export const getCurrentBatch = (shifts = SHIFTS) => {
+//   const hour = new Date().getHours();
+//   const activeShifts = Object.keys(shifts || {}).length ? shifts : SHIFTS;
+//   for (const shift of Object.values(activeShifts)) {
+//     if (hour >= shift.startHour && hour < shift.endHour) {
+//       return shift.name;
+//     }
+//   }
+//   return null;
+// };
 
 // Returns true if this vehicle already has a non-cancelled ticket in Batch 1 today
-export const hadBatch1TicketToday = (vehicleId, tickets, shifts = SHIFTS) => {
-  const todayStr = new Date().toISOString().split("T")[0];
-  const activeShifts = Object.keys(shifts || {}).length ? shifts : SHIFTS;
-  const batch1Name =
-    activeShifts.BATCH_1?.name || Object.values(activeShifts)[0]?.name;
-  return tickets.some((t) => {
-    if (t.vehicle?.id !== vehicleId) return false;
-    if (t.status === "CANCELLED") return false;
-    const ticketDate = t.issued_at?.split("T")[0];
-    return (
-      ticketDate === todayStr &&
-      OperationsService.getShiftBatchName(t.issued_at, activeShifts) ===
-        batch1Name
-    );
-  });
-};
+// export const hadBatch1TicketToday = (vehicleId, tickets, shifts = SHIFTS) => {
+//   const todayStr = new Date().toISOString().split("T")[0];
+//   const activeShifts = Object.keys(shifts || {}).length ? shifts : SHIFTS;
+//   const batch1Name =
+//     activeShifts.BATCH_1?.name || Object.values(activeShifts)[0]?.name;
+//   return tickets.some((t) => {
+//     if (t.vehicle?.id !== vehicleId) return false;
+//     if (t.status === "CANCELLED") return false;
+//     const ticketDate = t.issued_at?.split("T")[0];
+//     return (
+//       ticketDate === todayStr &&
+//       OperationsService.getShiftBatchName(t.issued_at, activeShifts) ===
+//         batch1Name
+//     );
+//   });
+// };
 
 // ─── Custom Hook ──────────────────────────────────────────────────────────────
 export function useTicket(userRole = "") {
