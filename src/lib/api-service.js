@@ -25,20 +25,20 @@ export const apiService = {
       },
     };
 
-    console.log(`[API] ${options.method || "GET"} ${url}`, {
-      body: fetchOptions.body ? JSON.parse(fetchOptions.body) : undefined,
-    });
+    // console.log(`[API] ${options.method || "GET"} ${url}`, {
+    //   body: fetchOptions.body ? JSON.parse(fetchOptions.body) : undefined,
+    // });
 
     try {
       let response = await fetch(url, fetchOptions);
 
       // Log response status
-      console.log(`[API] Response Status: ${response.status}`, {
-        statusText: response.statusText,
-        headers: {
-          "content-type": response.headers.get("content-type"),
-        },
-      });
+      // console.log(`[API] Response Status: ${response.status}`, {
+      //   statusText: response.statusText,
+      //   headers: {
+      //     "content-type": response.headers.get("content-type"),
+      //   },
+      // });
 
       if (response.status === 401) {
         const refreshed = await this.refreshToken();
@@ -59,7 +59,7 @@ export const apiService = {
       }
 
       if (!response.ok) {
-        console.error(`[API] Error Response:`, data);
+        // console.error(`[API] Error Response:`, data);
         const error = new Error(
           data.detail ||
             JSON.stringify(data) ||
@@ -70,10 +70,10 @@ export const apiService = {
         throw error;
       }
 
-      console.log(`[API] Success:`, data);
+      // console.log(`[API] Success:`, data);
       return data;
     } catch (err) {
-      console.error(`[API] Request failed:`, err);
+      // console.error(`[API] Request failed:`, err);
       throw err;
     }
   },

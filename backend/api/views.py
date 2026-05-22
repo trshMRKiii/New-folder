@@ -354,68 +354,64 @@ def dashboard_stats(request):
         'active_drivers': Driver.objects.filter(is_archived=False).count(),
     })
 
-
-
-
-
-@api_view(['GET'])
-def vehicle_records(request):
-    """Fetch vehicle records with relational data: code, plate, route, and driver"""
-    try:
-        vehicles = Vehicle.objects.select_related('route', 'active_driver').order_by('code')
-        print(f"DEBUG: Found {vehicles.count()} vehicles")
+# @api_view(['GET'])
+# def vehicle_records(request):
+#     """Fetch vehicle records with relational data: code, plate, route, and driver"""
+#     try:
+#         vehicles = Vehicle.objects.select_related('route', 'active_driver').order_by('code')
+#         print(f"DEBUG: Found {vehicles.count()} vehicles")
         
-        data = []
-        for v in vehicles:
-            try:
-                record = {
-                    'id': v.id,
-                    'code': v.code,
-                    'plate_number': v.plate_number,
-                    'route': v.route.full_name if v.route else '—',
-                    'driver': v.active_driver.name if v.active_driver else '—',
-                    'status': v.get_status_display() if hasattr(v, 'get_status_display') else v.status,
-                }
-                data.append(record)
-                print(f"DEBUG: Added vehicle {record}")
-            except Exception as e:
-                print(f"DEBUG: Error processing vehicle {v.id}: {e}")
-                continue
+#         data = []
+#         for v in vehicles:
+#             try:
+#                 record = {
+#                     'id': v.id,
+#                     'code': v.code,
+#                     'plate_number': v.plate_number,
+#                     'route': v.route.full_name if v.route else '—',
+#                     'driver': v.active_driver.name if v.active_driver else '—',
+#                     'status': v.get_status_display() if hasattr(v, 'get_status_display') else v.status,
+#                 }
+#                 data.append(record)
+#                 print(f"DEBUG: Added vehicle {record}")
+#             except Exception as e:
+#                 print(f"DEBUG: Error processing vehicle {v.id}: {e}")
+#                 continue
 
-        print(f"DEBUG: Returning {len(data)} vehicles")
-        return Response({'vehicles': data, 'total': len(data)})
-    except Exception as e:
-        print(f"DEBUG: Error in vehicle_records: {e}")
-        return Response({'error': str(e), 'vehicles': [], 'total': 0}, status=500)
+#         print(f"DEBUG: Returning {len(data)} vehicles")
+#         return Response({'vehicles': data, 'total': len(data)})
+#     except Exception as e:
+#         print(f"DEBUG: Error in vehicle_records: {e}")
+#         return Response({'error': str(e), 'vehicles': [], 'total': 0}, status=500)
 
 
-@api_view(['GET'])
-def driver_records(request):
-    """Fetch driver records with relational data: code, name, and contact number"""
-    try:
-        drivers = Driver.objects.order_by('code')
-        print(f"DEBUG: Found {drivers.count()} drivers")
+# @api_view(['GET'])
+# def driver_records(request):
+#     """Fetch driver records with relational data: code, name, and contact number"""
+#     try:
+#         drivers = Driver.objects.order_by('code')
+#         print(f"DEBUG: Found {drivers.count()} drivers")
 
-        data = []
-        for d in drivers:
-            try:
-                record = {
-                    'id': d.id,
-                    'code': d.code,
-                    'name': d.name,
-                    'contact_number': d.contact_number if d.contact_number else '—',
-                }
-                data.append(record)
-                print(f"DEBUG: Added driver {record}")
-            except Exception as e:
-                print(f"DEBUG: Error processing driver {d.id}: {e}")
-                continue
+#         data = []
+#         for d in drivers:
+#             try:
+#                 record = {
+#                     'id': d.id,
+#                     'code': d.code,
+#                     'name': d.name,
+#                     'contact_number': d.contact_number if d.contact_number else '—',
+#                 }
+#                 data.append(record)
+#                 print(f"DEBUG: Added driver {record}")
+#             except Exception as e:
+#                 print(f"DEBUG: Error processing driver {d.id}: {e}")
+#                 continue
 
-        print(f"DEBUG: Returning {len(data)} drivers")
-        return Response({'drivers': data, 'total': len(data)})
-    except Exception as e:
-        print(f"DEBUG: Error in driver_records: {e}")
-        return Response({'error': str(e), 'drivers': [], 'total': 0}, status=500)
+#         print(f"DEBUG: Returning {len(data)} drivers")
+#         return Response({'drivers': data, 'total': len(data)})
+#     except Exception as e:
+#         print(f"DEBUG: Error in driver_records: {e}")
+#         return Response({'error': str(e), 'drivers': [], 'total': 0}, status=500)
 
 
 @api_view(['GET'])
