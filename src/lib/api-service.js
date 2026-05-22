@@ -292,7 +292,7 @@ export const handleLogin = async (
     sessionStorage.setItem("accessToken", data.access);
     sessionStorage.setItem("refreshToken", data.refresh);
 
-    // Fetch current user to personalise welcome toast
+    //Fetch current user to personalise welcome toast
     try {
       const userRes = await fetch(`${API_BASE_URL}/current-user/`, {
         headers: { Authorization: `Bearer ${data.access}` },
@@ -310,7 +310,7 @@ export const handleLogin = async (
       if (showToast) showToast("Welcome back!", "success");
     }
 
-    // ✅ Redirect to dashboard after successful login
+    //Redirect to dashboard after successful login
     navigate("/dashboard");
   } catch (err) {
     setError(err.message);
