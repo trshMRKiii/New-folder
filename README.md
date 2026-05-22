@@ -1,16 +1,101 @@
-# React + Vite
+# 🚀 iTURNO: Centralize Transport Operations and Reward System for North Central Terminal of San Fernando City, La Union
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern web application that helps personnel manage tasks efficiently with a clean UI and powerful backend integration.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📑 Table of Contents
 
-## React Compiler
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Acknowledgments](#acknowledgments)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ✨ Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Dashboard with analytics
+- Secure authentication (JWT-based)
+- RESTful API with JSON responses
+- Responsive UI built with React
+- Ticketing (Current and Late issuance of ticket)
+- Dispatching (First In, First Out)
+- Collection (Batch verification, Override access for admin)
+- Searching
+- Filtering
+- Granting Access (Personnel Asks)
+- Public Viewing (Active Queue and Next Queue)
+- Reporting (CSV and PDF)
+
+---
+
+## ⚙️ Installation
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/trshMRKiii/iTURNO
+cd iTURNO
+npm install
+
+---
+
+## ▶️ Usage
+
+On terminal or Command Prompt
+
+Start the Api server:
+bash
+cd backend
+py manage.py runserver
+
+Build for production:
+bash
+npm run dev
+
+---
+
+## 📡 API Reference
+
+Api Root:
+http://127.0.0.1:8000/api/
+
+  {
+	"users": "http://127.0.0.1:8000/api/users/",
+    	"drivers": "http://127.0.0.1:8000/api/drivers/",
+   	"routes": "http://127.0.0.1:8000/api/routes/",
+   	"vehicles": "http://127.0.0.1:8000/api/vehicles/",
+ 	"tickets": "http://127.0.0.1:8000/api/tickets/",
+   	"ticketPrice": "http://127.0.0.1:8000/api/ticketPrice/"
+  }
+
+PUT schedule:
+http://127.0.0.1:8000/api/schedules/
+
+GET Report:
+http://127.0.0.1:8000/api/report/summary/
+http://127.0.0.1:8000/api/report/collections/
+http://127.0.0.1:8000/api/report/chart/
+http://127.0.0.1:8000/api/logs/
+
+GET dashboard:
+http://127.0.0.1:8000/api/dashboard/stats/
+
+GET public queue:
+http://127.0.0.1:8000/api/queue/
+
+--
+
+## Acknowledgement:
+We would like to express our sincere gratitude to God for the guidance, strength, and wisdom throughout the development of this project.
+
+We also extend our heartfelt thanks to the Office for Public Safety for their support and cooperation.
+
+Special thanks to Sir Fernando Jose Bautista, our course instructor, for his guidance, encouragement, and valuable insights during the completion of this project.
+
+We are also grateful to our groupmates for their hard work, cooperation, and contributions, as well as to our friends who supported and motivated us throughout this journey.
+
+This project would not have been possible without all of your support and encouragement.
+```
